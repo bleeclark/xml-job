@@ -134,7 +134,8 @@ def build_linkedin_feed(
     out.append("<source>")
     out.append(f"  <lastBuildDate>{last_build_date}</lastBuildDate>")
     out.append(f"  <publisherUrl>{_cdata(publisher_url)}</publisherUrl>")
-    out.append(f"  <publisher>{publisher}</publisher>")
+    # Plain text nodes must escape & < > ; company names often contain "&" (e.g. "Foo & Bar").
+    out.append(f"  <publisher>{_cdata(publisher)}</publisher>")
     out.append(f"  <expectedJobCount>{_cdata(str(len(jobs)))}</expectedJobCount>")
 
     for j in jobs:
