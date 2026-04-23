@@ -1,0 +1,45 @@
+# Build Crelate RSS → LinkedIn XML and deploy to GitHub Pages (gh-pages branch).
+# After the first run, the public feed URL is:
+#   https://<github-username>.github.io/<repo-name>/linkedin-jobs.xml
+name: Deploy LinkedIn job feed
+
+on:
+  push:
+    branches: [main, master]
+  schedule:
+    # LinkedIn scrapes about every 6h; keep the hosted file in the same ballpark
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build feed
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          python3 li_feed.py --config config.feed.json --out out/linkedin-jobs.xml
+          cp site/index.html out/index.html
+          test -s out/linkedin-jobs.xml
+
+      - name: Publish to GitHub Pages (gh-pages branch)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: ./out
+          force_orphan: false
